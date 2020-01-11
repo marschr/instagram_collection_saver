@@ -24,6 +24,18 @@ function debug($msg){
     fwrite(STDERR, $msg."\n");
 }
 
+//check for .JSON dir
+if (!file_exists($jsonDir)) {
+    debug("  .JSON dir does not exist, making now...");
+    mkdir($jsonDir, 0777, true); // recursive=true
+}
+
+//check for .JSON dir
+if (!file_exists($storageDir)) {
+    debug("  .ORIGINAL_MEDIA dir does not exist, making now...");
+    mkdir($storageDir, 0777, true); // recursive=true
+}
+
 debug("Logging in as $username...");
 
 // A function for getting the instagram URL, taken from:
@@ -41,6 +53,7 @@ function instagram_id_to_url($instagram_id){
         $userid = $parts[1];
     }
     $alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+    $url_suffix = "";
     while($instagram_id > 0){
         $remainder = $instagram_id % 64;
         $instagram_id = ($instagram_id-$remainder) / 64;
@@ -76,7 +89,17 @@ function get_urls($media){
 }
 
 try {
-    $ig->login($username, $password);
+    $loginResponse = $ig->login($username, $password);
+
+    if (!is_null($loginResponse) && $loginResponse->isTwoFactorRequired()) {
+        $twoFactorIdentifier = $loginResponse->getTwoFactorInfo()->getTwoFactorIdentifier();
+
+         // The "STDIN" lets you paste the code via terminal for testing.
+         // You should replace this line with the logic you want.
+         // The verification code will be sent by Instagram via SMS.
+        $verificationCode = trim(fgets(STDIN));
+        $ig->finishTwoFactorLogin($username, $password, $twoFactorIdentifier, $verificationCode);
+    }
 } catch (\Exception $e) {
     echo 'Something went wrong while logging in: '.$e->getMessage()."\n";
     exit(1);
@@ -112,10 +135,12 @@ try {
         debug("On collection: $name");
         $collectionDir = $collectionsDir.DIRECTORY_SEPARATOR.urlencode($name);
         debug("  Collection directory: $collectionDir");
+
         if (!file_exists($collectionDir)) {
             debug("  Directory does not exist, making now...");
             mkdir($collectionDir, 0777, true); // recursive=true
         }
+
         $colId = $collection->getCollectionId();
         debug("  Collection ID: $colId");
 
@@ -144,6 +169,15 @@ try {
             // Iterate through each post and download the images
             foreach($feedItems as $j => $item) {
                 $media = $item->getMedia();
+
+                //Gets post date for further folder classification
+                $takenat = $media->getTakenAt();
+                debug("      post taken_at: $takenat");
+                $takenat_quarter = ceil((date("m",$takenat))/3);
+                $takenat_year = date("y",$takenat);
+                $takenat_yq = $takenat_year."Q".$takenat_quarter;
+                debug("      post quarter taken_at: $takenat_yq");
+
                 $id = $media->getId();
                 $username = $media->getUser()->getUsername();
                 $post_url = instagram_id_to_url($id);
@@ -173,27 +207,32 @@ try {
                     // collections if it isn't already there...
                     $filepath = $storageDir.DIRECTORY_SEPARATOR.$fname;
                     if (!file_exists($filepath)) {
-                        debug("      File not saved, fetching: $fname");
+                        debug("      File not saved locally yet, fetching and saving: $fname");
                         debug("      post url: $post_url");
                         sleep(rand(1, 2));
                         copy($url, $filepath);
                     }
 
+                    //Check if takenat_yq dir exists, if not, create it
+                    if (!file_exists($collectionDir.DIRECTORY_SEPARATOR.$takenat_yq)) {
+                        debug("      Dir for quarter $takenat_yq on collection $name does not exist, making now...");
+                        mkdir($collectionDir.DIRECTORY_SEPARATOR.$takenat_yq, 0777, true); // recursive=true
+                    }
                     // Also hardlink that file into the collection we are
                     // updating
-                    $linkpath = $collectionDir.DIRECTORY_SEPARATOR.$fname;
+                    $linkpath = $collectionDir.DIRECTORY_SEPARATOR.$takenat_yq.DIRECTORY_SEPARATOR.$fname;
                     if (!file_exists($linkpath)) {
                         debug("      Hard linking to: $linkpath");
                         link($filepath, $linkpath);
                     }
                 }
             }
-
             // Now we must update the maxId variable to the "next page".  This
             // will be a null value again when we've reached the last page!
             // And we will stop looping through pages as soon as maxId becomes
             // null.
             $maxId = $response->getNextMaxId();
+            debug("last maxId $maxId");
 
         // Must use "!==" for comparison instead of "!=".
         } while ($maxId !== null);
