@@ -97,6 +97,7 @@ try {
          // The "STDIN" lets you paste the code via terminal for testing.
          // You should replace this line with the logic you want.
          // The verification code will be sent by Instagram via SMS.
+        echo "Enter the 2FA code:\n";
         $verificationCode = trim(fgets(STDIN));
         $ig->finishTwoFactorLogin($username, $password, $twoFactorIdentifier, $verificationCode);
     }
