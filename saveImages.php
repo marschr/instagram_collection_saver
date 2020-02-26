@@ -27,13 +27,13 @@ function debug($msg){
 //check for .JSON dir
 if (!file_exists($jsonDir)) {
     debug("  .JSON dir does not exist, making now...");
-    mkdir($jsonDir, 0777, true); // recursive=true
+    mkdir($jsonDir, 0755, true); // recursive=true
 }
 
 //check for .JSON dir
 if (!file_exists($storageDir)) {
     debug("  .ORIGINAL_MEDIA dir does not exist, making now...");
-    mkdir($storageDir, 0777, true); // recursive=true
+    mkdir($storageDir, 0755, true); // recursive=true
 }
 
 debug("Logging in as $username...");
@@ -139,7 +139,7 @@ try {
 
         if (!file_exists($collectionDir)) {
             debug("  Directory does not exist, making now...");
-            mkdir($collectionDir, 0777, true); // recursive=true
+            mkdir($collectionDir, 0755, true); // recursive=true
         }
 
         $colId = $collection->getCollectionId();
@@ -217,7 +217,7 @@ try {
                     //Check if takenat_yq dir exists, if not, create it
                     if (!file_exists($collectionDir.DIRECTORY_SEPARATOR.$takenat_yq)) {
                         debug("      Dir for quarter $takenat_yq on collection $name does not exist, making now...");
-                        mkdir($collectionDir.DIRECTORY_SEPARATOR.$takenat_yq, 0777, true); // recursive=true
+                        mkdir($collectionDir.DIRECTORY_SEPARATOR.$takenat_yq, 0755, true); // recursive=true
                     }
                     // Also hardlink that file into the collection we are
                     // updating
