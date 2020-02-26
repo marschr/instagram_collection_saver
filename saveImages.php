@@ -88,6 +88,21 @@ function get_urls($media){
     return [$urlHolder->getCandidates()[0]->getUrl()];
 }
 
+function get_2fa_code($path)
+{   
+    echo "Entering 2fa func, cwd: ";
+    echo getcwd() . "\n";
+    try {
+        $2FAFile = file_get_contents($path);
+        echo "2FAFile contents:\n".$2FAFile;
+        exit(1);        
+    } catch (Exception $e) {
+        echo 'Something went wrong while logging in: '.$e->getMessage()."\n";
+        exit(1);
+    }
+
+}
+
 try {
     $loginResponse = $ig->login($username, $password);
 
@@ -97,7 +112,7 @@ try {
          // The "STDIN" lets you paste the code via terminal for testing.
          // You should replace this line with the logic you want.
          // The verification code will be sent by Instagram via SMS.
-        echo "Enter the 2FA code:\n";
+        echo "Copy the 2FA code to docker binded volume.\n";
         $verificationCode = trim(fgets(STDIN));
         $ig->finishTwoFactorLogin($username, $password, $twoFactorIdentifier, $verificationCode);
     }
