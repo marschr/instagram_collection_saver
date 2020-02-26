@@ -88,33 +88,59 @@ function get_urls($media){
     return [$urlHolder->getCandidates()[0]->getUrl()];
 }
 
-function get_2fa_code($path)
+function get_tfa_code()
 {   
-    echo "Entering 2fa func, cwd: ";
-    echo getcwd() . "\n";
+    // echo "Entering 2fa func, cwd: ";
+    // echo getcwd() . "\n";
+
+    $tfaCode = "";
+    $path = dirname(getcwd())."/2FA";
+    echo "Place the 2FA code at: ".$path." \n";
+
     try {
-        $TwoFAFile = file_get_contents($path);
-        echo "2FAFile contents:\n".$2FAFile;
-        exit(1);        
+        while (!file_exists($path)) {
+            echo "Waiting for 2FA code file.  \r";
+            sleep(1);
+            echo "Waiting for 2FA code file.. \r";
+            sleep(1);
+            echo "Waiting for 2FA code file...\r";
+            sleep(1);
+        }
+        echo "\n2FA code file found...          \n";        
+
+        $tfaCode = file_get_contents($path);
+
+        echo "2FA contents: ".$tfaCode." \n";
+
+        unlink($path);
+        if(strlen($tfaCode)!= 6) {
+            echo 'The 2FA file must be exactly 6 digits long. Exiting.'
+            exit(1)
+        }
     } catch (Exception $e) {
         echo 'Something went wrong while logging in: '.$e->getMessage()."\n";
         exit(1);
     }
 
+    return $tfaCode;
 }
 
 try {
+    echo "Auth init";
+    exit(1);
     $loginResponse = $ig->login($username, $password);
-
     if (!is_null($loginResponse) && $loginResponse->isTwoFactorRequired()) {
         $twoFactorIdentifier = $loginResponse->getTwoFactorInfo()->getTwoFactorIdentifier();
 
          // The "STDIN" lets you paste the code via terminal for testing.
-         // You should replace this line with the logic you want.
          // The verification code will be sent by Instagram via SMS.
-        echo "Copy the 2FA code to docker binded volume.\n";
+
+        // $verificationCode = get_tfa_code();
+        echo "Enter the Two Factor Auth code: ";
         $verificationCode = trim(fgets(STDIN));
+        echo "\n";
         $ig->finishTwoFactorLogin($username, $password, $twoFactorIdentifier, $verificationCode);
+
     }
 } catch (\Exception $e) {
     echo 'Something went wrong while logging in: '.$e->getMessage()."\n";
