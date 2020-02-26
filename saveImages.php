@@ -93,7 +93,7 @@ function get_2fa_code($path)
     echo "Entering 2fa func, cwd: ";
     echo getcwd() . "\n";
     try {
-        $2FAFile = file_get_contents($path);
+        $TwoFAFile = file_get_contents($path);
         echo "2FAFile contents:\n".$2FAFile;
         exit(1);        
     } catch (Exception $e) {
