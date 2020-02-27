@@ -90,11 +90,8 @@ function get_urls($media){
 
 function get_tfa_code()
 {   
-    // echo "Entering 2fa func, cwd: ";
-    // echo getcwd() . "\n";
-
     $tfaCode = "";
-    $path = dirname(getcwd())."/2FA";
+    $path = getcwd()."/2FA";
     echo "Place the 2FA code at: ".$path." \n";
 
     try {
@@ -114,8 +111,8 @@ function get_tfa_code()
 
         unlink($path);
         if(strlen($tfaCode)!= 6) {
-            echo 'The 2FA file must be exactly 6 digits long. Exiting.'
-            exit(1)
+            echo 'The 2FA file must be exactly 6 digits long. Exiting.';
+            exit(1);
         }
     } catch (Exception $e) {
         echo 'Something went wrong while logging in: '.$e->getMessage()."\n";
@@ -126,8 +123,7 @@ function get_tfa_code()
 }
 
 try {
-    echo "Auth init";
-    exit(1);
+    debug("Auth init");
     $loginResponse = $ig->login($username, $password);
     if (!is_null($loginResponse) && $loginResponse->isTwoFactorRequired()) {
         $twoFactorIdentifier = $loginResponse->getTwoFactorInfo()->getTwoFactorIdentifier();
@@ -136,11 +132,12 @@ try {
          // The verification code will be sent by Instagram via SMS.
 
         // $verificationCode = get_tfa_code();
-        echo "Enter the Two Factor Auth code: ";
-        $verificationCode = trim(fgets(STDIN));
+        echo "Enter the Two Factor Auth code. If you are running with docker-compose up, you my need to docker attach first or use 2FA file...\n";
+        // $verificationCode = trim(fgets(STDIN));
+        $verificationCode = get_tfa_code();
+        echo "Two Factor Auth code: ".$verificationCode."\n";
         echo "\n";
         $ig->finishTwoFactorLogin($username, $password, $twoFactorIdentifier, $verificationCode);
-
     }
 } catch (\Exception $e) {
     echo 'Something went wrong while logging in: '.$e->getMessage()."\n";
